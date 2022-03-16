@@ -26,6 +26,8 @@
     "@nestjs/core": "^8.0.0",
     "@nestjs/graphql": "^10.0.7",
     "@nestjs/platform-express": "^8.0.0",
+    "@nestjs/schedule": "^1.0.2",
+    "@types/cron": "^1.7.3",
     "apollo-server-express": "^3.6.4",
     "dgraph-js": "^21.3.1",
     "graphql": "^16.3.0",
