@@ -48,7 +48,7 @@ export class MainService {
     async captchas() {
         const query = `
             query {
-                c(func: type(Capatcha), orderdesc: createdAt) {
+                c(func: type(Captcha), orderdesc: createdAt) {
                     id: uid
                     expand(_all_)
                 }

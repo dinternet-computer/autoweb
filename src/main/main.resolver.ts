@@ -16,12 +16,12 @@ export class MainResolver {
         return await this.mainService.scheduleNum();;
     }
 
-    @Query(of => Captcha)
+    @Query(of => [Captcha])
     async capatchas() {
         return await this.mainService.captchas();
     }
 
-    @Query(of => Payload)
+    @Query(of => [Payload])
     async payloads() {
         return await this.mainService.payloads();
     }
