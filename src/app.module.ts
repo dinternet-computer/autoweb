@@ -5,6 +5,7 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MainModule } from './main/main.module';
+import { DbModule } from './db/db.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { MainModule } from './main/main.module';
       playground: true,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql')
     }),
-    MainModule
+    MainModule,
+    DbModule
   ],
   controllers: [AppController],
   providers: [AppService],

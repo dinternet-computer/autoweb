@@ -1,0 +1,23 @@
+value: string
+createdAt: dateTime @index(hour) .
+sha256: string @index(hash) .
+base64: string  
+
+# 验证码
+type Captcha {
+    # 验证码的base64图像
+    base64
+    # 创建时间
+    createdAt
+    # 图像hash
+    sha256
+    # 验证码的值
+    value
+}
+
+type Payload {
+    # 创建时间
+    createdAt
+    # 助计词
+    value
+}
