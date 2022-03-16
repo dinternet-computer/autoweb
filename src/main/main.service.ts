@@ -124,7 +124,6 @@ export class MainService {
         return res.totalCount[0]?.count ?? 0
     }
 
-    // @Cron('10 * * * * *')
     async main() {
 
         const scheduleNum = await this.scheduleNum();
@@ -143,7 +142,7 @@ export class MainService {
 
         await page.waitForSelector('.container');
 
-        await page.click('#registerButton');
+        await page.$('#registerButton') && await page.click('#registerButton')
 
         await page.waitForSelector('.container');
 
