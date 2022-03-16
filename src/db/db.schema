@@ -1,7 +1,7 @@
-value: string
+value: string .
 createdAt: dateTime @index(hour) .
 sha256: string @index(hash) .
-base64: string  
+base64: string .
 
 # 验证码
 type Captcha {

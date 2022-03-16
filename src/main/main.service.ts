@@ -19,8 +19,6 @@ export class MainService {
         await page.waitForSelector('.container');
 
         await page.type('#registerAlias', 'autoweb-bot...')
-
-        
         
         const client = await page.target().createCDPSession();
         await client.send('WebAuthn.enable');
