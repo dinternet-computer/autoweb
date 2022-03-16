@@ -7,6 +7,6 @@ export class MainResolver {
 
     @Query(of => String)
     async main() {
-        return "dasdas"
+        return await this.mainService.main();
     }
 }
