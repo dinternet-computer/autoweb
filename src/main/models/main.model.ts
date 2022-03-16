@@ -18,8 +18,8 @@ export class Captcha {
 export class Payload {
     @Field()
     id: string
-    @Field()
+    @Field({nullable: true})
     createdAt: string
-    @Field()
+    @Field({nullable: true})
     value: string
 }

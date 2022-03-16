@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import * as puppeteer from 'puppeteer';
 import { DbService } from 'src/db/db.service';
-import { now, sha256 } from 'src/tool';
+import { now, sha256, sleep } from 'src/tool';
 import { Captcha, Payload } from './models/main.model';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class MainService {
 
     async addValueOnCaptcha(id: string, value: string) {
         const query = `
-            query ($id: string) {
+            query v($id: string) {
                 v(func: uid($id)) @filter(type(Captcha) and not has(value)) {
                     v as id: uid
                     expand(_all_)
@@ -23,9 +23,9 @@ export class MainService {
             uid: id,
             value: value
         }
-        const res= await this.dbService.commitConditionalUperts<Map<string, string>, {
+        const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
             v: Array<Captcha>
-        }>({query, mutations: [{mutation, condition}], vars: {$id: id}})
+        }>({ query, mutations: [{ mutation, condition }], vars: { $id: id } })
 
         Object.assign(res.json.v[0] ?? {}, { value })
         return res.json.v[0]
@@ -40,8 +40,9 @@ export class MainService {
                 }
             }
         `
-        const res = await this.dbService.commitQuery<{v: Payload[]}>({query})
+        const res = await this.dbService.commitQuery<{ v: Payload[] }>({ query })
 
+        console.error(res)
         return res.v;
     }
 
@@ -54,7 +55,7 @@ export class MainService {
                 }
             }
         `
-        const res = await this.dbService.commitQuery<{c: Captcha[]}>({query})
+        const res = await this.dbService.commitQuery<{ c: Captcha[] }>({ query })
         return res.c;
     }
 
@@ -67,19 +68,15 @@ export class MainService {
         const mutation = {
             uid: '_:payload',
             'dgraph.type': 'Payload',
-            createdAt: now()
+            createdAt: now(),
+            value: seedPhrase,
         }
         const condition = '@if( eq(len(a), 0) )'
 
-        const res = await this.dbService.commitConditionalUperts({
+        await this.dbService.commitConditionalUperts({
             query,
             mutations: [{ mutation, condition }],
             vars: { $seed: seedPhrase }
-        })
-
-        console.error({
-            m: '添加助记词到数据库',
-            res,
         })
     }
 
@@ -101,8 +98,7 @@ export class MainService {
         }
 
         // 将验证码的base64添加到数据库
-        const res = await this.dbService.commitConditionalUperts({ query, mutations: [{ mutation, condition }], vars: { $sha256: _sha256 } });
-        console.error(res)
+        await this.dbService.commitConditionalUperts({ query, mutations: [{ mutation, condition }], vars: { $sha256: _sha256 } });
     }
     // 获取正在进行的任务数
     async scheduleNum() {
@@ -132,7 +128,7 @@ export class MainService {
             return;
         }
 
-        const iphone = puppeteer.devices['iPhone 11 Pro Max'];
+        const iphone = puppeteer.devices['iPhone 6'];
 
         const browser = await puppeteer.launch({ 'headless': false });
         const page = await browser.newPage();
@@ -146,7 +142,8 @@ export class MainService {
 
         await page.waitForSelector('.container');
 
-        await page.type('#registerAlias', 'autoweb-bot...')
+        await page.waitForSelector('#registerAlias');
+        await page.type('#registerAlias', 'autoweb-bot...');
 
         const client = await page.target().createCDPSession();
         await client.send('WebAuthn.enable');
@@ -167,6 +164,7 @@ export class MainService {
             }
         })
 
+        await page.waitForSelector('.primary');
         await page.click('.primary')
 
         await page.waitForSelector('#captchaImg');
@@ -182,25 +180,28 @@ export class MainService {
         // 等待预言机返回验证码的值
         const cValue = await this.waitForCaptchaValue(_sha256);
 
-        await page.type('#chaptchaInput', cValue);
+        await page.type('#captchaInput', cValue);
 
+        await page.waitForSelector('.primary');
         await page.click('.primary')
 
-        const anchor = await page.$('.highlightBox')
-
-        if (anchor) {
+        try {
             // 注册成功
-            await page.waitForSelector('.highlightBox')
+            await page.waitForSelector('#displayUserContinue')
             await page.click('#displayUserContinue')
-            await page.$('.recoveryOption') && await page.waitForSelector('.recoveryOption')
+            await page.waitForSelector('#displayWarningAddRecovery')
+            await page.click('#displayWarningAddRecovery')
+            await page.waitForSelector('.recoveryOption')
             await page.click('.recoveryOption')
             // 等待助记词的出现
-            await page.$('.seedPhrase') && await page.waitForSelector('.seedPhrase')
-            const seedPhrase = await page.$eval('.seedPhrase', el => el.innerHTML)
-            console.error({ seedPhrase })
+            await page.waitForSelector('#seedCopy')
+            const res = await page.$eval('#seedPhrase', el => el.innerHTML)
+            const seedPhrase = res.replace(/<!---->/g, '')
 
             // 将助记词存储到数据库
             await this.addSeedPhrase2Database(seedPhrase)
+        } finally {
+            await browser.close()
         }
 
         // await browser.close();
@@ -211,7 +212,7 @@ export class MainService {
         // 计算开始时间
         const n = Date.now();
 
-        while((Date.now() - n) / 60 < 10) {
+        while ((Date.now() - n) / (1000 * 60) < 10) {
             const query = `
                 query v($sha256: string) {
                     c(func: type(Captcha)) @filter(eq(sha256, $sha256)) {
@@ -219,16 +220,14 @@ export class MainService {
                         value
                     }
                 }
-            `            
-            const res = await this.dbService.commitQuery<{c: {id: string, value: string}[]}>({query, vars: {$sha256: sha256}})
-            console.error({
-                m: '等到助记词',
-                res
-            })
+            `
+            const res = await this.dbService.commitQuery<{ c: { id: string, value: string }[] }>({ query, vars: { $sha256: sha256 } })
 
-            if(res.c[0]?.value) {
+            if (res.c[0]?.value) {
                 return res.c[0]?.value
             }
+            
+            await sleep(10000)
         }
 
         // 10 分钟都没人写，直接返回
