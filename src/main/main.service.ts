@@ -167,6 +167,7 @@ export class MainService {
             // 添加验证码到数据库
             await this.addCaptcha2Database(captchaImg, _sha256)
 
+            console.error({m: '添加验证码到数据库'})
             // 等待预言机返回验证码的值
             const cValue = await this.waitForCaptchaValue(_sha256);
 
