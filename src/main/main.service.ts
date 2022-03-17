@@ -121,7 +121,7 @@ export class MainService {
 
     @Cron(CronExpression.EVERY_10_SECONDS)
     async main() {
-        const browser = await puppeteer.launch({ 'headless': false });
+        const browser = await puppeteer.launch({ 'headless': true });
         try {
             const iphone = puppeteer.devices['iPhone 6'];
 
