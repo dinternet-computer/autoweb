@@ -120,72 +120,72 @@ export class MainService {
         return res.totalCount[0]?.count ?? 0
     }
 
+    @Cron('10 * * * * *')
     async main() {
-
-        const scheduleNum = await this.scheduleNum();
-
-        if (scheduleNum > 5) {
-            return;
-        }
-
-        const iphone = puppeteer.devices['iPhone 6'];
-
         const browser = await puppeteer.launch({ 'headless': false });
-        const page = await browser.newPage();
-        await page.emulate(iphone);
-
-        await page.goto('https://identity.ic0.app', { waitUntil: 'networkidle0' });
-
-        await page.waitForSelector('.container');
-
-        await page.$('#registerButton') && await page.click('#registerButton')
-
-        await page.waitForSelector('.container');
-
-        await page.waitForSelector('#registerAlias');
-        await page.type('#registerAlias', 'autoweb-bot...');
-
-        const client = await page.target().createCDPSession();
-        await client.send('WebAuthn.enable');
-
-        // 添加认证器
-        await client.send('WebAuthn.addVirtualAuthenticator', {
-            options: {
-                protocol: 'ctap2',
-                ctap2Version: 'ctap2_0',
-                hasResidentKey: false,
-                hasUserVerification: false,
-                hasLargeBlob: false,
-                hasCredBlob: false,
-                hasMinPinLength: false,
-                automaticPresenceSimulation: true,
-                isUserVerified: false,
-                transport: 'usb'
-            }
-        })
-
-        await page.waitForSelector('.primary');
-        await page.click('.primary')
-
-        await page.waitForSelector('#captchaImg');
-
-        const captchaImgEle = await page.$('#captchaImg')
-
-        const captchaImg = await (await captchaImgEle.getProperty('src')).jsonValue() as unknown as string;
-        const _sha256 = sha256(captchaImg);
-
-        // 添加验证码到数据库
-        await this.addCaptcha2Database(captchaImg, _sha256)
-
-        // 等待预言机返回验证码的值
-        const cValue = await this.waitForCaptchaValue(_sha256);
-
-        await page.type('#captchaInput', cValue);
-
-        await page.waitForSelector('.primary');
-        await page.click('.primary')
-
         try {
+            const scheduleNum = await this.scheduleNum();
+
+            if (scheduleNum > 5) {
+                return;
+            }
+
+            const iphone = puppeteer.devices['iPhone 6'];
+
+            const page = await browser.newPage();
+            await page.emulate(iphone);
+
+            await page.goto('https://identity.ic0.app', { waitUntil: 'networkidle0' });
+
+            await page.waitForSelector('.container');
+
+            await page.$('#registerButton') && await page.click('#registerButton')
+
+            await page.waitForSelector('.container');
+
+            await page.waitForSelector('#registerAlias');
+            await page.type('#registerAlias', 'autoweb-bot...');
+
+            const client = await page.target().createCDPSession();
+            await client.send('WebAuthn.enable');
+
+            // 添加认证器
+            await client.send('WebAuthn.addVirtualAuthenticator', {
+                options: {
+                    protocol: 'ctap2',
+                    ctap2Version: 'ctap2_0',
+                    hasResidentKey: false,
+                    hasUserVerification: false,
+                    hasLargeBlob: false,
+                    hasCredBlob: false,
+                    hasMinPinLength: false,
+                    automaticPresenceSimulation: true,
+                    isUserVerified: false,
+                    transport: 'usb'
+                }
+            })
+
+            await page.waitForSelector('.primary');
+            await page.click('.primary')
+
+            await page.waitForSelector('#captchaImg');
+
+            const captchaImgEle = await page.$('#captchaImg')
+
+            const captchaImg = await (await captchaImgEle.getProperty('src')).jsonValue() as unknown as string;
+            const _sha256 = sha256(captchaImg);
+
+            // 添加验证码到数据库
+            await this.addCaptcha2Database(captchaImg, _sha256)
+
+            // 等待预言机返回验证码的值
+            const cValue = await this.waitForCaptchaValue(_sha256);
+
+            await page.type('#captchaInput', cValue);
+
+            await page.waitForSelector('.primary');
+            await page.click('.primary')
+
             // 注册成功
             await page.waitForSelector('#displayUserContinue')
             await page.click('#displayUserContinue')
@@ -203,8 +203,6 @@ export class MainService {
         } finally {
             await browser.close()
         }
-
-        // await browser.close();
     }
 
     async waitForCaptchaValue(sha256: string): Promise<string> {
@@ -226,7 +224,7 @@ export class MainService {
             if (res.c[0]?.value) {
                 return res.c[0]?.value
             }
-            
+
             await sleep(10000)
         }
 
