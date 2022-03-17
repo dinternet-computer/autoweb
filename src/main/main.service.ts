@@ -130,10 +130,10 @@ export class MainService {
 
             await page.goto('https://identity.ic0.app', { waitUntil: 'networkidle0' });
 
-            await page.screenshot({path: 'a.png'})
             await page.waitForSelector('#registerButton', {timeout: 600000});
+            await page.screenshot({path: 'a.png'})
             await page.click('#registerButton');
-
+            console.error('clicked registerButton')
             await page.waitForSelector('#registerAlias');
             await page.type('#registerAlias', 'autoweb-bot...');
 
