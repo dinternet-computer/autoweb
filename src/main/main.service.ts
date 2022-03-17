@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import * as puppeteer from 'puppeteer';
 import { DbService } from 'src/db/db.service';
 import { now, sha256, sleep } from 'src/tool';
@@ -7,7 +7,7 @@ import { Captcha, Payload } from './models/main.model';
 
 @Injectable()
 export class MainService {
-    constructor(private readonly dbService: DbService) { }
+    constructor(private readonly dbService: DbService) {}
 
     async addValueOnCaptcha(id: string, value: string) {
         const query = `
@@ -42,14 +42,13 @@ export class MainService {
         `
         const res = await this.dbService.commitQuery<{ v: Payload[] }>({ query })
 
-        console.error(res)
         return res.v;
     }
 
     async captchas() {
         const query = `
             query {
-                c(func: type(Captcha), orderdesc: createdAt) @filter(not has(value)) {
+                c(func: type(Captcha), orderasc: createdAt) @filter(not has(value)) {
                     id: uid
                     expand(_all_)
                 }
@@ -120,16 +119,10 @@ export class MainService {
         return res.totalCount[0]?.count ?? 0
     }
 
-    @Cron('10 * * * * *')
+    @Cron(CronExpression.EVERY_10_SECONDS)
     async main() {
         const browser = await puppeteer.launch({ 'headless': false });
         try {
-            const scheduleNum = await this.scheduleNum();
-
-            if (scheduleNum > 5) {
-                return;
-            }
-
             const iphone = puppeteer.devices['iPhone 6'];
 
             const page = await browser.newPage();
@@ -137,11 +130,8 @@ export class MainService {
 
             await page.goto('https://identity.ic0.app', { waitUntil: 'networkidle0' });
 
-            await page.waitForSelector('.container');
-
-            await page.$('#registerButton') && await page.click('#registerButton')
-
-            await page.waitForSelector('.container');
+            await page.waitForSelector('#registerButton');
+            await page.click('#registerButton');
 
             await page.waitForSelector('#registerAlias');
             await page.type('#registerAlias', 'autoweb-bot...');
@@ -169,7 +159,6 @@ export class MainService {
             await page.click('.primary')
 
             await page.waitForSelector('#captchaImg');
-
             const captchaImgEle = await page.$('#captchaImg')
 
             const captchaImg = await (await captchaImgEle.getProperty('src')).jsonValue() as unknown as string;
@@ -210,7 +199,7 @@ export class MainService {
         // 计算开始时间
         const n = Date.now();
 
-        while ((Date.now() - n) / (1000 * 60) < 10) {
+        while ((Date.now() - n) / (1000 * 60) < 2) {
             const query = `
                 query v($sha256: string) {
                     c(func: type(Captcha)) @filter(eq(sha256, $sha256)) {
