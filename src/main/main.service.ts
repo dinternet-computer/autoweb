@@ -131,7 +131,7 @@ export class MainService {
             await page.goto('https://identity.ic0.app', { waitUntil: 'networkidle0' });
 
             await page.screenshot({path: 'a.png'})
-            await page.waitForSelector('#registerButton');
+            await page.waitForSelector('#registerButton', {timeout: 600000});
             await page.click('#registerButton');
 
             await page.waitForSelector('#registerAlias');
