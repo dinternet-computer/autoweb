@@ -49,7 +49,7 @@ export class MainService {
     async captchas() {
         const query = `
             query {
-                c(func: type(Captcha), orderdesc: createdAt) {
+                c(func: type(Captcha), orderdesc: createdAt) @filter(not has(value)) {
                     id: uid
                     expand(_all_)
                 }
@@ -120,7 +120,7 @@ export class MainService {
         return res.totalCount[0]?.count ?? 0
     }
 
-    @Cron('10 * * * * *')
+    // @Cron('10 * * * * *')
     async main() {
         const browser = await puppeteer.launch({ 'headless': false });
         try {

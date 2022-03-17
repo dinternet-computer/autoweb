@@ -16,8 +16,8 @@ export class MainResolver {
         return await this.mainService.scheduleNum();;
     }
 
-    @Query(of => [Captcha])
-    async capatchas() {
+    @Query(of => [Captcha], {description: '只返回没有通过验证的验证码'})
+    async captchas() {
         return await this.mainService.captchas();
     }
 
