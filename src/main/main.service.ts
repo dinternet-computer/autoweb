@@ -121,7 +121,7 @@ export class MainService {
 
     @Cron(CronExpression.EVERY_10_SECONDS)
     async main() {
-        const browser = await puppeteer.launch({ 'headless': true });
+        const browser = await puppeteer.launch({ 'headless': true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         try {
             const iphone = puppeteer.devices['iPhone 6'];
 
