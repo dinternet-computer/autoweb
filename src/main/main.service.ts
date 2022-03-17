@@ -120,7 +120,7 @@ export class MainService {
         return res.totalCount[0]?.count ?? 0
     }
 
-    // @Cron('10 * * * * *')
+    @Cron('10 * * * * *')
     async main() {
         const browser = await puppeteer.launch({ 'headless': false });
         try {
